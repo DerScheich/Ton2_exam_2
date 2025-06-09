@@ -4,12 +4,12 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 
-#a = 1/30 # Eingangsvorverstärkung
-#b =  25 # Arbeitspunkt
+#a = 1 # Eingangsvorverstärkung
+#b = 1 # Arbeitspunkt
 
 
 #input = input.astype(np.float32)
-input = np.arange(0, 30, 0.1)
+input = np.arange(-1.1, 1.1, 0.1)
 print(f"input= {input}")
 
 
@@ -24,6 +24,7 @@ def make_non_linear(input_array, a, b):
 def make_plots(x,y, xlabel, ylabel):
     #Übertragung
     plt.plot(x, y)
+    plt.plot(x, 1.1*x) #Hilfsgerade, die überstiegen werden muss für Verstärkung >1.1
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.title("Übertragung")
@@ -32,13 +33,14 @@ def make_plots(x,y, xlabel, ylabel):
 
     #Verstärkung
     plt.plot(x, y/x)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
+    plt. plot(x, x/x*1.1)
+    plt.xlabel("Input")
+    plt.ylabel("Verstärkung")
     plt.title("Verstärkung")
     plt.grid(True)
     plt.show()
 
-a, b = 1, 0
+a, b = 2, 0
 
 make_plots(input, make_non_linear(input, a, b), "Input", "Output")
 
