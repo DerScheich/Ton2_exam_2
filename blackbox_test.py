@@ -4,6 +4,7 @@ from scipy.signal import chirp
 from scipy.io.wavfile import read, write
 from pathlib import Path
 import librosa.display
+from matplotlib.ticker import FixedLocator, FuncFormatter
 
 from PP2_BlackBox3 import blackbox
 
@@ -32,7 +33,7 @@ print(f"Sweep-Files geschrieben: {output_dir / 'sweep_in.wav'}, {output_dir / 's
 
 # spectrums
 n_fft = 4096
-hop_length = 128 # abtastgröße freq.bereich
+hop_length = 4096  # abtastgröße freq.bereich
 
 S_in = np.abs(librosa.stft(sweep, n_fft=n_fft, hop_length=hop_length))
 S_out = np.abs(librosa.stft(y_sweep, n_fft=n_fft, hop_length=hop_length))
@@ -76,6 +77,32 @@ fig.tight_layout(rect=[0, 0, 0.9, 1])
 
 plt.savefig(output_dir / 'sweep_spektrogramm.png', dpi=300)
 plt.close(fig)
+
+# amplitude freq gang
+N = len(sweep)
+freqs = np.fft.rfftfreq(N, 1/fs)
+S = np.fft.rfft(sweep)
+Y = np.fft.rfft(y_sweep)
+resp_S = 20 * np.log10(np.abs(S) / np.max(np.abs(S)))
+resp_Y = 20 * np.log10(np.abs(Y) / np.max(np.abs(S)))
+
+plt.rcParams["font.size"] = 10
+fig2, ax2 = plt.subplots(figsize=(8, 4))
+ax2.plot(freqs, resp_S, color="#8b0000", lw=1.2, label='Input')
+ax2.plot(freqs, resp_Y, color="#8b0000", lw=1.2, label='Output')
+ax2.set_xscale("log")
+ax2.set_xlim(20, 20000)
+xt = [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000]
+ax2.xaxis.set_major_locator(FixedLocator(xt))
+ax2.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f"{int(x/1000)} k" if x >= 1000 else f"{int(x)}"))
+ax2.set_xlabel("Frequenz [Hz]")
+ax2.set_ylim(-60, 5)
+ax2.set_ylabel("Pegel [dB relativ zur Maximalaussteuerung]")
+ax2.grid(which="both", color="#666", alpha=0.3, ls="-")
+ax2.set_title("Amplituden-Frequenzgang", pad=10)
+fig2.tight_layout()
+plt.savefig(output_dir / 'amplitude_freq_response.png', dpi=300)
+plt.close(fig2)
 
 # wav
 wav_path = input_dir / 'input.wav'
