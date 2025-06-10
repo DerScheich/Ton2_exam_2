@@ -23,7 +23,7 @@ output_dir.mkdir(parents=True, exist_ok=True)
 T = 5.0
 
 t = np.linspace(0, T, int(fs*T))
-sweep = chirp(t, f0=20, f1=20000, t1=T, method='logarithmic')
+sweep = chirp(t, f0=20, f1=20000, t1=T, method='linear')
 y_sweep = blackbox(sweep, fs)
 
 # write outs
