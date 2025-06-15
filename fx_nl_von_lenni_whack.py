@@ -5,23 +5,23 @@ import matplotlib.pyplot as plt
 
 
 
-#input = np.arange(-1.1, 1.1, 0.1)
-#print(f"input= {input}")
-
 a, b = 1.1, 0
 fs=48000
+freq = 500
 
+# linear steigendes Signal zur Erstellung der Kennlinien
+dummy_input = np.arange(-1.1, 1.1, 0.1)
+
+# nicht-linearer Effekt
 def fx_nl(input_array, a, b):
-    output_array = []
     output_array = np.sinh(a*input_array+b)
-    print(f"output_array= {output_array}")
     return output_array
 
-
-def plot_transfer_functions(input,output, input_label, output_label):
+# Übertragungs- und Verstärkungskennlinie plotten
+def plot_transfer_functions(input_amplitude, output_amplitude, input_label, output_label):
     #Übertragung
-    plt.plot(input, output)
-    plt.plot(input, 1.1*input) #Hilfsgerade, die überstiegen werden muss für Verstärkung >1.1
+    plt.plot(input_amplitude, output_amplitude)
+    plt.plot(input_amplitude, 1.1 * input_amplitude) #Hilfsgerade, die überstiegen werden muss für Verstärkung >1.1
     plt.xlabel(input_label)
     plt.ylabel(output_label)
     plt.title("Übertragung")
@@ -29,15 +29,14 @@ def plot_transfer_functions(input,output, input_label, output_label):
     plt.show()
 
     #Verstärkung
-    plt.plot(input, output/input)
-    plt. plot(input, input/input*1.1)
+    plt.plot(input_amplitude, output_amplitude / input_amplitude)
+    plt. plot(input_amplitude, input_amplitude / input_amplitude * 1.1)
     plt.xlabel("Input")
     plt.ylabel("Verstärkung")
     plt.title("Verstärkung")
     plt.grid(True)
     plt.show()
 
-plot_transfer_functions(input, fx_nl(input, a, b), "Input", "Output")
 
 #Sinus-Signal erstellen
 def generate_sine(freq, duration=1, fs=48000, amplitude=1):
@@ -45,6 +44,32 @@ def generate_sine(freq, duration=1, fs=48000, amplitude=1):
     return amplitude * np.sin(2 * np.pi * freq * t)
 
 #Klirrfaktor
+def calculate_distortion_factor():
+    sine_array = generate_sine(freq)
 
-non_linear_sine = fx_nl(generate_sine(500),a,b)
+    non_linear_sine = fx_nl(sine_array,a,b)
 
+    Y = np.fft.fft(non_linear_sine)
+    N = len(non_linear_sine)
+    freq_array = np.fft.fftfreq(N, 1/fs)
+
+    # Nur positive Frequenzen
+    mask = freq_array > 0
+    freq_array = freq_array[mask]
+    Y = np.abs(Y[mask])
+
+    # Suche Index der Grundfrequenz und Harmonischen
+    def find_freq(freq_array, target_array):
+        return np.argmin(np.abs(freq_array - target_array))
+
+    U1 = Y[find_freq(freq_array, freq)]
+    U2 = Y[find_freq(freq_array, 2*freq)]
+    U3 = Y[find_freq(freq_array, 3*freq)]
+
+    # Klirrfaktor berechnen
+    k = np.sqrt((U2**2 + U3**2) / U1**2)
+    print(f"Klirrfaktor = {100*k:.4f} %")
+
+if __name__ == "__main__":
+    plot_transfer_functions(dummy_input, fx_nl(dummy_input, a, b), "Input", "Output")
+    calculate_distortion_factor()
