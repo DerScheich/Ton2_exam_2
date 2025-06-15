@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 
 
 
-a, b = 1.1, 0
-fs=48000
+a, b = 11, 0
+fs=44100
 freq = 500
 
 # linear steigendes Signal zur Erstellung der Kennlinien
@@ -68,8 +68,25 @@ def calculate_distortion_factor():
 
     # Klirrfaktor berechnen
     k = np.sqrt((U2**2 + U3**2) / U1**2)
-    print(f"Klirrfaktor = {100*k:.4f} %")
+    print(f"Klirrfaktor = {100*k:.2f} %")
+
+def listen_to_fx_nl():
+
+    # Path manager
+    root_path = Path(__file__).parent.resolve()
+    i_path = root_path / "input" / "spoken.wav"
+    output_path = root_path / "output" / "output_file_wav.wav"
+
+    _, input_file = wav.read(i_path)
+
+    input_file = input_file/max(input_file) # auf 1 normalisieren
+    output_file = fx_nl(input_file, a, b)
+
+    # save result
+    wav.write(output_path, fs, output_file)
+
 
 if __name__ == "__main__":
     plot_transfer_functions(dummy_input, fx_nl(dummy_input, a, b), "Input", "Output")
     calculate_distortion_factor()
+    listen_to_fx_nl()
