@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 
 
-a, b = 11, 0
+a, b = 1.1, 0
 fs=44100
 freq = 500
 
@@ -79,7 +79,7 @@ def listen_to_fx_nl():
 
     _, input_file = wav.read(i_path)
 
-    input_file = input_file/max(input_file) # auf 1 normalisieren
+    input_file = input_file/abs(max(input_file)) # auf 1 normalisieren
     output_file = fx_nl(input_file, a, b)
 
     # save result
