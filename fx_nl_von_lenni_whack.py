@@ -67,8 +67,8 @@ def calculate_distortion_factor():
     U3 = Y[find_freq(freq_array, 3*freq)]
 
     # Klirrfaktor berechnen
-    k = np.sqrt((U2**2 + U3**2) / U1**2)
-    print(f"Klirrfaktor = {100*k:.2f} %")
+    k = 100*np.sqrt((U2**2 + U3**2) / (U1**2+U2**2 + U3**2))
+    print(f"Klirrfaktor = {k:.2f} %")
 
 def listen_to_fx_nl():
 
@@ -83,7 +83,7 @@ def listen_to_fx_nl():
     output_file = fx_nl(input_file, a, b)
 
     # save result
-    wav.write(output_path, fs, output_file)
+    wav.write(output_path, fs, np.int16(output_file * 32767))
 
 
 if __name__ == "__main__":
