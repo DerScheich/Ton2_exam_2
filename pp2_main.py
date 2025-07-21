@@ -5,8 +5,10 @@ from scipy.io.wavfile import read, write
 from pathlib import Path
 import librosa.display
 from matplotlib.ticker import FixedLocator, FuncFormatter
+import scipy.io.wavfile as wav
 
 from PP2_BlackBox3 import blackbox
+
 
 # Fs
 fs = 44100
@@ -22,13 +24,15 @@ output_dir.mkdir(parents=True, exist_ok=True)
 
 def create_sweep():
     sweep_time = 5.0
-    t = np.linspace(0, sweep_time, int(fs*sweep_time))
+    t = np.linspace(0, sweep_time, int(fs * sweep_time))
     sweep = chirp(t, f0=20, f1=20000, t1=sweep_time, method='linear')
     return sweep
+
 
 def sweep_blackbox(sweep):
     bb_sweep = blackbox(sweep, fs)
     return bb_sweep
+
 
 def write_output_files(sweep, bb_sweep):
     # write outs
@@ -36,8 +40,8 @@ def write_output_files(sweep, bb_sweep):
     write(output_dir / 'sweep_bb.wav', fs, np.float32(bb_sweep))
     print(f"Sweep-Files geschrieben: {output_dir / 'sweep_in.wav'}, {output_dir / 'sweep_bb.wav'}")
 
+
 def create_spectrogram(sweep, bb_sweep):
-    # spectrums
     n_fft = 4096
     hop_length = 4096  # abtastgröße freq.bereich
 
@@ -86,6 +90,7 @@ def create_spectrogram(sweep, bb_sweep):
     plt.savefig(output_dir / 'sweep_spektrogramm.png', dpi=300)
     plt.close(fig)
 
+
 def create_frequency_response(sweep, bb_sweep):
     # Amplitudenfrequenzgang
     N = len(sweep)
@@ -129,7 +134,9 @@ def create_frequency_response(sweep, bb_sweep):
     write(output_dir / 'output_blackbox.wav', fs2, np.int16(y * 32767))
     print(f"Output als {output_dir / 'output_blackbox.wav'} gespeichert")
 
+
 def aufgabe_a():
+    print("----------------------- AUFGABENTEIL A ----------------------------------")
     # Sweep
     sweep = create_sweep()
     bb_sweep = sweep_blackbox(create_sweep())
@@ -137,9 +144,112 @@ def aufgabe_a():
 
     create_spectrogram(sweep, bb_sweep)
     create_frequency_response(sweep, bb_sweep)
-    
+
+# ----------------------- AUFGABENTEIL B ----------------------------------
+
+def create_dummy_input():
+    # linear steigendes Signal zur Erstellung der Kennlinien
+    dummy_input = np.arange(-1, 1.1, 0.1)
+    return dummy_input
+
+# nicht-linearer Effekt
+def fx_nl(input_array, a=1.1, b=0):
+    output_array = np.sinh(a*input_array+b)
+    return output_array
+
+# Übertragungs- und Verstärkungskennlinie plotten
+def plot_transfer_functions(input_amplitude, output_amplitude, input_label, output_label):
+    #Übertragung
+    plt.plot(input_amplitude, output_amplitude)
+    plt.plot(input_amplitude, 1.1 * input_amplitude) #Hilfsgerade, die "überstiegen" werden muss für Verstärkung > 1.1
+    plt.xlabel(input_label)
+    plt.ylabel(output_label)
+    plt.title("Übertragung")
+    plt.grid(True)
+    plt.show()
+
+    #Verstärkung
+    plt.plot(input_amplitude, output_amplitude / input_amplitude)
+    plt. plot(input_amplitude, input_amplitude / input_amplitude * 1.1) #Hilfsgerade, die überstiegen werden muss für Verstärkung > 1.1
+    plt.xlabel("Input")
+    plt.ylabel("Verstärkung")
+    plt.title("Verstärkung")
+    plt.grid(True)
+    plt.show()
+    print("Übertragungs- und Verstärkungskennlinie erstellt")
+
+#Sinus-Signal erstellen
+def generate_sine(freq, duration=1, fs=44100, amplitude=1):
+    t = np.arange(0, duration, 1 / fs)
+    return amplitude * np.sin(2 * np.pi * freq * t)
+
+#Klirrfaktor
+def calculate_distortion_factor(freq=500):
+    # Sinus-Signals erstellen und durch fx_nl schicken
+    sine_array = generate_sine(freq)
+    non_linear_sine = fx_nl(sine_array)
+
+    # Wandlung Signal in Frequenzbereich, Berechnung Frequenzachse
+    Y = np.fft.fft(non_linear_sine)
+    N = len(non_linear_sine)
+    freq_array = np.fft.fftfreq(N, 1/fs)
+
+    # Nur positive Frequenzen
+    mask = freq_array > 0
+    freq_array = freq_array[mask]
+    Y = np.abs(Y[mask])
+
+    # Suche Index der Grundfrequenz und Harmonischen
+    def find_freq(freq_array, target_freq):
+        return np.argmin(np.abs(freq_array - target_freq))
+
+    # Bestimme Amplituden der Harmonischen
+    U1 = Y[find_freq(freq_array, freq)]
+    U2 = Y[find_freq(freq_array, 2*freq)]
+    U3 = Y[find_freq(freq_array, 3*freq)]
+
+    # Klirrfaktor berechnen und ausgeben
+    k = 100*np.sqrt((U2**2 + U3**2) / (U1**2+U2**2 + U3**2))
+    print(f"Klirrfaktor = {k:.2f} %")
+
+def apply_fx_nl_to_file():
+
+    # Path Manager
+    root_path = Path(__file__).parent.resolve()
+    i_path = root_path / "input" / "spoken.wav"
+    output_path = root_path / "output" / "output_file_wav.wav"
+
+    _, input_file = wav.read(i_path)
+
+    input_file = input_file/abs(max(input_file)) # auf 1 normalisieren
+    output_file = fx_nl(input_file)
+
+    # Ergebnisdatei speichern
+    wav.write(output_path, fs, np.int16(output_file * 32767))
+
+
+def aufgabe_b():
+    print("----------------------- AUFGABENTEIL B ----------------------------------")
+
+
+
+    plot_transfer_functions(create_dummy_input(), fx_nl(create_dummy_input()), "Input", "Output")
+    calculate_distortion_factor()
+    apply_fx_nl_to_file()
+
 
 if __name__ == "__main__":
     aufgabe_a()
+    aufgabe_b()
+
+
+
+
+
+
+
+
+
+
 
 

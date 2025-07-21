@@ -31,7 +31,7 @@ def blackbox(eingang, fs):
     e = 600
     
     for i in range(w1,w2):
-        print(x[0])
+        #print(x[0])
         if i == 0:  
             y = np.zeros(lang)         
             alp_1 = (e*2*np.pi*delta_T)/(1+e*2*np.pi*delta_T)
