@@ -1,3 +1,8 @@
+# PP2 Main
+# Hart, Teich
+# Gruppe 2
+# 18.06.2025
+
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import chirp
